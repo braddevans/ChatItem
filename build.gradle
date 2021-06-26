@@ -61,9 +61,4 @@ processResources {
 
 jar {
     from sourceSets.main.output
-    from {
-        configurations.external.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
 }
