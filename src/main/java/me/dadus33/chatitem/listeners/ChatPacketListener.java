@@ -39,7 +39,7 @@ public class ChatPacketListener extends PacketAdapter {
 
     public ChatPacketListener(Plugin plugin, ListenerPriority listenerPriority, Storage s, PacketType... types) {
         super(plugin, listenerPriority, types);
-        if(ChatItem.supportsShulkerBoxes()){
+        if (ChatItem.supportsShulkerBoxes()) {
             SHULKER_BOXES.addAll(Arrays.asList(Material.BLACK_SHULKER_BOX, Material.BLUE_SHULKER_BOX,
                     Material.BROWN_SHULKER_BOX, Material.CYAN_SHULKER_BOX, Material.GRAY_SHULKER_BOX, Material.GREEN_SHULKER_BOX,
                     Material.LIGHT_BLUE_SHULKER_BOX, Material.LIME_SHULKER_BOX, Material.MAGENTA_SHULKER_BOX, Material.ORANGE_SHULKER_BOX,
@@ -72,19 +72,59 @@ public class ChatPacketListener extends PacketAdapter {
         return sb.toString();
     }
 
-    private void stripData(ItemStack i){
-        if(i == null){
+    public static String styleItem(ItemStack item, Storage c) {
+        String replacer = c.NAME_FORMAT;
+        String amount = c.AMOUNT_FORMAT;
+        boolean dname = item.hasItemMeta() && item.getItemMeta().hasDisplayName();
+
+        if (item.getAmount() == 1) {
+            if (c.FORCE_ADD_AMOUNT) {
+                amount = amount.replace(TIMES, "1");
+                replacer = replacer.replace(AMOUNT, amount);
+            } else {
+                replacer = replacer.replace(AMOUNT, "");
+            }
+        } else {
+            amount = amount.replace(TIMES, String.valueOf(item.getAmount()));
+            replacer = replacer.replace(AMOUNT, amount);
+        }
+        if (dname) {
+            String trp = item.getItemMeta().getDisplayName();
+            if (c.COLOR_IF_ALREADY_COLORED) {
+                replacer = replacer.replace(NAME, ChatColor.stripColor(trp));
+            } else {
+                replacer = replacer.replace(NAME, trp);
+            }
+        } else {
+            HashMap<Short, String> translationSection = c.TRANSLATIONS.get(item.getType().name());
+            if (translationSection == null) {
+                String trp = materialToName(item.getType());
+                replacer = replacer.replace(NAME, trp);
+            } else {
+                String translated = translationSection.get(item.getDurability());
+                if (translated != null) {
+                    replacer = replacer.replace(NAME, translated);
+                } else {
+                    replacer = replacer.replace(NAME, materialToName(item.getType()));
+                }
+            }
+        }
+        return replacer;
+    }
+
+    private void stripData(ItemStack i) {
+        if (i == null) {
             return;
         }
-        if(i.getType().equals(Material.AIR)){
+        if (i.getType().equals(Material.AIR)) {
             return;
         }
-        if(!i.hasItemMeta()){
+        if (!i.hasItemMeta()) {
             return;
         }
         ItemMeta im = Bukkit.getItemFactory().getItemMeta(i.getType());
         ItemMeta original = i.getItemMeta();
-        if(original.hasDisplayName()){
+        if (original.hasDisplayName()) {
             im.setDisplayName(original.getDisplayName());
         }
         i.setItemMeta(im);
@@ -94,41 +134,41 @@ public class ChatPacketListener extends PacketAdapter {
     @Override
     public void onPacketSending(final PacketEvent e) {
         final PacketContainer packet = e.getPacket();
-        if(!packet.hasMetadata("parse")){ //First we check if the packet validator has validated this packet to be parsed by us
+        if (!packet.hasMetadata("parse")) { //First we check if the packet validator has validated this packet to be parsed by us
             return;
         }
-        final boolean usesBaseComponents = (boolean)packet.getMetadata("base-component"); //The packet validator should also tell if this packet uses base components
+        final boolean usesBaseComponents = (boolean) packet.getMetadata("base-component"); //The packet validator should also tell if this packet uses base components
         e.setCancelled(true); //We cancel the packet as we're going to resend it anyways (ignoring listeners this time)
         Bukkit.getScheduler().runTaskAsynchronously(ChatItem.getInstance(), () -> {
-            String json = (String)packet.getMetadata("json"); //The packet validator got the json for us, so no need to get it again
+            String json = (String) packet.getMetadata("json"); //The packet validator got the json for us, so no need to get it again
             int topIndex = -1;
             String name = null;
-            for(Player p : Bukkit.getOnlinePlayers()){
-                String pname = "\\u0007"+p.getName();
-                if(!json.contains(pname)){
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                String pname = "\\u0007" + p.getName();
+                if (!json.contains(pname)) {
                     continue;
                 }
-                int index = json.lastIndexOf(pname)+pname.length();
-                if(index>topIndex){
+                int index = json.lastIndexOf(pname) + pname.length();
+                if (index > topIndex) {
                     topIndex = index;
                     name = pname.replace("\\u0007", "");
                 }
             }
-            if(name==null){ //something went really bad, so we run away and hide (AKA the player left or is on another server)
+            if (name == null) { //something went really bad, so we run away and hide (AKA the player left or is on another server)
                 return;
             }
 
             Player p = Bukkit.getPlayer(name);
             StringBuilder builder = new StringBuilder(json);
-            builder.replace(topIndex-(name.length()+6), topIndex, ""); //we remove both the name and the separator from the json string
+            builder.replace(topIndex - (name.length() + 6), topIndex, ""); //we remove both the name and the separator from the json string
             json = builder.toString();
 
             String message = null;
             try {
-                if(!p.getItemInHand().getType().equals(Material.AIR)) {
+                if (!p.getItemInHand().getType().equals(Material.AIR)) {
                     ItemStack copy = p.getItemInHand().clone();
-                    if(copy.getType().equals(Material.WRITABLE_BOOK) || copy.getType().equals(Material.WRITTEN_BOOK)){ //filtering written books
-                        BookMeta bm = (BookMeta)copy.getItemMeta();
+                    if (copy.getType().equals(Material.WRITABLE_BOOK) || copy.getType().equals(Material.WRITTEN_BOOK)) { //filtering written books
+                        BookMeta bm = (BookMeta) copy.getItemMeta();
                         bm.setPages(Collections.emptyList());
                         copy.setItemMeta(bm);
                     } else {
@@ -150,17 +190,17 @@ public class ChatPacketListener extends PacketAdapter {
                     }
                     message = ChatItem.getManipulator().parse(json, c.PLACEHOLDERS, copy, styleItem(copy, c), ProtocolVersion.getClientVersion(e.getPlayer()));
                 } else {
-                    if(!c.HAND_DISABLED){
+                    if (!c.HAND_DISABLED) {
                         message = ChatItem.getManipulator().parseEmpty(json, c.PLACEHOLDERS, c.HAND_NAME, c.HAND_TOOLTIP, p);
                     }
                 }
             } catch (InvocationTargetException | IllegalAccessException | InstantiationException | NoSuchFieldException | NoSuchMethodException e1) {
                 e1.printStackTrace();
             }
-            if(message!=null) {
-                if(!usesBaseComponents) {
+            if (message != null) {
+                if (!usesBaseComponents) {
                     packet.getChatComponents().writeSafely(0, WrappedChatComponent.fromJson(message));
-                }else{
+                } else {
                     packet.getSpecificModifier(BaseComponent[].class).writeSafely(0, ComponentSerializer.parse(message));
                 }
                 try {
@@ -181,46 +221,6 @@ public class ChatPacketListener extends PacketAdapter {
 
     public void setStorage(Storage st) {
         c = st;
-    }
-
-    public static String styleItem(ItemStack item, Storage c){
-        String replacer = c.NAME_FORMAT;
-        String amount = c.AMOUNT_FORMAT;
-        boolean dname = item.hasItemMeta() ? item.getItemMeta().hasDisplayName() : false;
-
-        if (item.getAmount() == 1) {
-            if (c.FORCE_ADD_AMOUNT) {
-                amount = amount.replace(TIMES, "1");
-                replacer = replacer.replace(AMOUNT, amount);
-            } else {
-                replacer = replacer.replace(AMOUNT, "");
-            }
-        } else {
-            amount = amount.replace(TIMES, String.valueOf(item.getAmount()));
-            replacer = replacer.replace(AMOUNT, amount);
-        }
-        if (dname) {
-            String trp = item.getItemMeta().getDisplayName();
-            if(c.COLOR_IF_ALREADY_COLORED){
-                replacer = replacer.replace(NAME, ChatColor.stripColor(trp));
-            } else {
-                replacer = replacer.replace(NAME, trp);
-            }
-        } else {
-            HashMap<Short, String> translationSection = c.TRANSLATIONS.get(item.getType().name());
-            if(translationSection==null){
-                String trp = materialToName(item.getType());
-                replacer = replacer.replace(NAME, trp);
-            }else {
-                String translated = translationSection.get(item.getDurability());
-                if (translated != null) {
-                    replacer = replacer.replace(NAME, translated);
-                } else {
-                    replacer = replacer.replace(NAME, materialToName(item.getType()));
-                }
-            }
-        }
-        return replacer;
     }
 
 }

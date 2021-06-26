@@ -21,98 +21,126 @@ public enum ProtocolVersion {
 
     //Latest version should always have the upper limit set to Integer.MAX_VALUE so I don't have to update the plugin for every minor protocol change
 
+    private static ProtocolVersion serverVersion;
+    private static ConcurrentHashMap<String, Integer> PLAYER_VERSION_MAP = new ConcurrentHashMap<>();
     public final int MIN_VER;
     public final int MAX_VER;
     public final int INDEX; //Represents how new the version is (0 - extremely old)
 
-    private static ProtocolVersion serverVersion;
-
-    private static ConcurrentHashMap<String, Integer> PLAYER_VERSION_MAP = new ConcurrentHashMap<>();
-
-    ProtocolVersion(int min, int max, int index){
+    ProtocolVersion(int min, int max, int index) {
         this.MIN_VER = min;
         this.MAX_VER = max;
         this.INDEX = index;
     }
 
-    public static ProtocolVersion getVersion(int protocolVersion){
+    public static ProtocolVersion getVersion(int protocolVersion) {
         for (ProtocolVersion ver : ProtocolVersion.values()) {
-            if(protocolVersion >= ver.MIN_VER && protocolVersion <= ver.MAX_VER){
+            if (protocolVersion >= ver.MIN_VER && protocolVersion <= ver.MAX_VER) {
                 return ver;
             }
         }
         return INVALID;
     }
 
-    public static ProtocolVersion getServerVersion(){
-        if(serverVersion == null){
+    public static ProtocolVersion getServerVersion() {
+        if (serverVersion == null) {
             String version = ChatItem.getVersion(Bukkit.getServer());
-            switch (version){
-                case "v1_7_R1": serverVersion = PRE_1_8; break;
-                case "v1_7_R2": serverVersion = PRE_1_8; break;
-                case "v1_7_R3": serverVersion = PRE_1_8; break;
-                case "v1_8_R1": serverVersion = V1_8_X; break;
-                case "v1_8_R2": serverVersion = V1_8_X; break;
-                case "v1_8_R3": serverVersion = V1_8_X; break;
-                case "v1_9_R1": serverVersion = V1_9_X; break;
-                case "v1_9_R2": serverVersion = V1_9_X; break;
-                case "v1_10_R1": serverVersion = V1_10_X; break;
-                case "v1_10_R2": serverVersion = V1_10_X; break;
-                case "v1_11_R1": serverVersion = V1_11_X; break;
-                case "v1_12_R1": serverVersion = V1_12_X; break;
-                case "v1_12_R2": serverVersion = V1_12_X; break;
-                case "v1_13_R1": serverVersion = V1_13_X; break;
-                case "v1_13_R2": serverVersion = V1_13_X; break;
+            switch (version) {
+                case "v1_7_R1":
+                    serverVersion = PRE_1_8;
+                    break;
+                case "v1_7_R2":
+                    serverVersion = PRE_1_8;
+                    break;
+                case "v1_7_R3":
+                    serverVersion = PRE_1_8;
+                    break;
+                case "v1_8_R1":
+                    serverVersion = V1_8_X;
+                    break;
+                case "v1_8_R2":
+                    serverVersion = V1_8_X;
+                    break;
+                case "v1_8_R3":
+                    serverVersion = V1_8_X;
+                    break;
+                case "v1_9_R1":
+                    serverVersion = V1_9_X;
+                    break;
+                case "v1_9_R2":
+                    serverVersion = V1_9_X;
+                    break;
+                case "v1_10_R1":
+                    serverVersion = V1_10_X;
+                    break;
+                case "v1_10_R2":
+                    serverVersion = V1_10_X;
+                    break;
+                case "v1_11_R1":
+                    serverVersion = V1_11_X;
+                    break;
+                case "v1_12_R1":
+                    serverVersion = V1_12_X;
+                    break;
+                case "v1_12_R2":
+                    serverVersion = V1_12_X;
+                    break;
+                case "v1_13_R1":
+                    serverVersion = V1_13_X;
+                    break;
+                case "v1_13_R2":
+                    serverVersion = V1_13_X;
+                    break;
 
-                default: serverVersion = INVALID;
+                default:
+                    serverVersion = INVALID;
             }
         }
         return serverVersion;
     }
 
-    public static void remapIds(int server, int player, Item item){
-        if(areIdsCompatible(server, player)){
+    public static void remapIds(int server, int player, Item item) {
+        if (areIdsCompatible(server, player)) {
             return;
         }
-        if((server >= V1_9_X.MIN_VER && player <= V1_8_X.MAX_VER) || (player >= V1_9_X.MIN_VER && server <= V1_8_X.MAX_VER)){
-            if((server >= V1_9_X.MIN_VER && player <= V1_8_X.MAX_VER)){
+        if ((server >= V1_9_X.MIN_VER && player <= V1_8_X.MAX_VER) || (player >= V1_9_X.MIN_VER && server <= V1_8_X.MAX_VER)) {
+            if ((server >= V1_9_X.MIN_VER && player <= V1_8_X.MAX_VER)) {
                 ItemRewriter_1_9_TO_1_8.reversedToClient(item);
                 return;
             }
             ItemRewriter_1_9_TO_1_8.toClient(item);
             return;
         }
-        if((server <= V1_10_X.MAX_VER && player >= V1_11_X.MIN_VER) || (player <= V1_10_X.MAX_VER && server >= V1_11_X.MIN_VER)){
-            if(server <= V1_10_X.MAX_VER && player >= V1_11_X.MIN_VER){
+        if ((server <= V1_10_X.MAX_VER && player >= V1_11_X.MIN_VER) || (player <= V1_10_X.MAX_VER && server >= V1_11_X.MIN_VER)) {
+            if (server <= V1_10_X.MAX_VER && player >= V1_11_X.MIN_VER) {
                 ItemRewriter_1_11_TO_1_10.toClient(item);
-            }else{
+            } else {
                 ItemRewriter_1_11_TO_1_10.reverseToClient(item);
             }
         }
     }
 
-    public static boolean areIdsCompatible(int version1, int version2){
-        if((version1 >= V1_9_X.MIN_VER && version2 <= V1_8_X.MAX_VER) || (version2 >= V1_9_X.MIN_VER && version1 <= V1_8_X.MAX_VER)){
+    public static boolean areIdsCompatible(int version1, int version2) {
+        if ((version1 >= V1_9_X.MIN_VER && version2 <= V1_8_X.MAX_VER) || (version2 >= V1_9_X.MIN_VER && version1 <= V1_8_X.MAX_VER)) {
             return false;
         }
-        if((version1 <= V1_10_X.MAX_VER && version2 >= V1_11_X.MIN_VER) || (version1 <= V1_10_X.MAX_VER && version2 >= V1_11_X.MIN_VER)){
+        if ((version1 <= V1_10_X.MAX_VER && version2 >= V1_11_X.MIN_VER) || (version1 <= V1_10_X.MAX_VER && version2 >= V1_11_X.MIN_VER)) {
             return false;
         }
         return true;
     }
 
 
+    public static int getClientVersion(final Player p) {
 
-    public static int getClientVersion(final Player p){
-
-        if(p==null){
+        if (p == null) {
             throw new NullPointerException("Player cannot be null!");
         }
 
-        if(ChatItem.usesViaVersion()){
+        if (ChatItem.usesViaVersion()) {
             return Via.getAPI().getPlayerVersion(p.getUniqueId());
-        }else if(ChatItem.usesProtocolSupport()){
-             return ProtocolSupportUtil.getProtocolVersion(p);
+        } else if (ChatItem.usesProtocolSupport()) {
+            return ProtocolSupportUtil.getProtocolVersion(p);
         }
 
         return getServerVersion().MAX_VER;
@@ -120,13 +148,13 @@ public enum ProtocolVersion {
         //return PLAYER_VERSION_MAP.get(stringifyAdress(p.getAddress()));
     }
 
-    public static String stringifyAdress(InetSocketAddress address){
+    public static String stringifyAdress(InetSocketAddress address) {
         String port = String.valueOf(address.getPort());
         String ip = address.getAddress().getHostAddress();
-        return ip+":"+port;
+        return ip + ":" + port;
     }
 
-    public static Map<String, Integer> getPlayerVersionMap(){
+    public static Map<String, Integer> getPlayerVersionMap() {
         return PLAYER_VERSION_MAP;
     }
 

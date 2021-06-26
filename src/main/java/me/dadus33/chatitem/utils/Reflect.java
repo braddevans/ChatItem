@@ -51,7 +51,7 @@ public class Reflect {
         return clazz;
     }
 
-    public static Class<?> getOBCEntityClass(String obcClassName){
+    public static Class<?> getOBCEntityClass(String obcClassName) {
         String clazzName = "org.bukkit.craftbukkit." + getVersion() + "entity." + obcClassName;
         Class<?> clazz;
 
@@ -75,8 +75,8 @@ public class Reflect {
         }
     }
 
-    public static Field getField(Class<?> clazz, String fieldName){
-        try{
+    public static Field getField(Class<?> clazz, String fieldName) {
+        try {
             Field f = clazz.getDeclaredField(fieldName);
             f.setAccessible(true);
             return f;

@@ -21,31 +21,31 @@ public class ChatPacketValidator extends PacketAdapter {
         c = s;
     }
 
-    public void onPacketSending(PacketEvent e){
-        if(ChatItem.supportsActionBar()) { //only if action bar messages are supported in this version of minecraft
-            if(ChatItem.supportsChatTypeEnum()){
-                if(((Enum)e.getPacket().getSpecificModifier(ChatItem.getChatMessageTypeClass()).read(0)).name().equals("GAME_INFO")){
+    public void onPacketSending(PacketEvent e) {
+        if (ChatItem.supportsActionBar()) { //only if action bar messages are supported in this version of minecraft
+            if (ChatItem.supportsChatTypeEnum()) {
+                if (((Enum) e.getPacket().getSpecificModifier(ChatItem.getChatMessageTypeClass()).read(0)).name().equals("GAME_INFO")) {
                     return; //It means it's an actionbar message, and we ain't intercepting those
                 }
-            }else if (e.getPacket().getBytes().readSafely(0) == (byte) 2) {
+            } else if (e.getPacket().getBytes().readSafely(0) == (byte) 2) {
                 return;  //It means it's an actionbar message, and we ain't intercepting those
             }
         }
         boolean usesBaseComponents = false;
         PacketContainer packet = e.getPacket();
         String json;
-        if(packet.getChatComponents().readSafely(0)==null){  //null check for some cases of messages sent using spigot's Chat Component API or other means
-            if(ChatItem.supportsChatComponentApi()){  //only if the API is supported in this server distribution
+        if (packet.getChatComponents().readSafely(0) == null) {  //null check for some cases of messages sent using spigot's Chat Component API or other means
+            if (ChatItem.supportsChatComponentApi()) {  //only if the API is supported in this server distribution
                 BaseComponent[] components = packet.getSpecificModifier(BaseComponent[].class).readSafely(0);
-                if(components == null){
+                if (components == null) {
                     return;
                 }
                 json = ComponentSerializer.toString(components);
                 usesBaseComponents = true;
-            }else{
+            } else {
                 return; //We don't know how to deal with anything else. Most probably some mod message we shouldn't mess with anyways
             }
-        }else{
+        } else {
             json = packet.getChatComponents().readSafely(0).getJson();
         }
 
@@ -58,7 +58,7 @@ public class ChatPacketValidator extends PacketAdapter {
         if (!found) {
             return; //then it's just a normal message without placeholders, so we leave it alone
         }
-        if(json.lastIndexOf("\\u0007")==-1){ //if the message doesn't contain the BELL separator, then it's certainly NOT a message we want to parse
+        if (json.lastIndexOf("\\u0007") == -1) { //if the message doesn't contain the BELL separator, then it's certainly NOT a message we want to parse
             return;
         }
 
@@ -67,7 +67,7 @@ public class ChatPacketValidator extends PacketAdapter {
         packet.addMetadata("json", json); //And we finally provide it with the json we already got from the packet
     }
 
-    public void setStorage(Storage st){
+    public void setStorage(Storage st) {
         c = st;
     }
 }

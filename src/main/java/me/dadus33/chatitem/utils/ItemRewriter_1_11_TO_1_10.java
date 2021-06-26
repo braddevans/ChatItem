@@ -11,7 +11,7 @@ import com.google.common.collect.HashBiMap;
  * Thanks to the developers of ViaVersion for this!
  */
 public class ItemRewriter_1_11_TO_1_10 {
-    private static BiMap<String, String> oldToNewNames = HashBiMap.create();
+    private static final BiMap<String, String> oldToNewNames = HashBiMap.create();
 
     static {
         oldToNewNames.put("AreaEffectCloud", "minecraft:area_effect_cloud");
@@ -92,6 +92,10 @@ public class ItemRewriter_1_11_TO_1_10 {
     }
 
     static void toClient(Item item) {
+        hasEntityTagCheck(item);
+    }
+
+    private static void hasEntityTagCheck(Item item) {
         if (hasEntityTag(item)) {
             CompoundTag entityTag = item.getTag().get("EntityTag");
             if (entityTag.get("id") instanceof StringTag) {
@@ -105,15 +109,7 @@ public class ItemRewriter_1_11_TO_1_10 {
 
 
     static void reverseToClient(Item item) {
-        if (hasEntityTag(item)) {
-            CompoundTag entityTag = item.getTag().get("EntityTag");
-            if (entityTag.get("id") instanceof StringTag) {
-                StringTag id = entityTag.get("id");
-                if (oldToNewNames.containsKey(id.getValue())) {
-                    id.setValue(oldToNewNames.get(id.getValue()));
-                }
-            }
-        }
+        hasEntityTagCheck(item);
     }
 
 
@@ -121,9 +117,7 @@ public class ItemRewriter_1_11_TO_1_10 {
         if (item != null && item.getId().equals("minecraft:spawn_egg")) { // Monster Egg
             CompoundTag tag = item.getTag();
             if (tag != null && tag.contains("EntityTag") && tag.get("EntityTag") instanceof CompoundTag) {
-                if (((CompoundTag) tag.get("EntityTag")).get("id") instanceof StringTag) {
-                    return true;
-                }
+                return ((CompoundTag) tag.get("EntityTag")).get("id") instanceof StringTag;
             }
         }
         return false;

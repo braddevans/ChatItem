@@ -21,17 +21,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class JSONManipulatorCurrent implements JSONManipulator{
+public class JSONManipulatorCurrent implements JSONManipulator {
 
-    private static final Class CRAFT_ITEM_STACK_CLASS = Reflect.getOBCClass("inventory.CraftItemStack");
-    private static final Class NBT_STRING = Reflect.getNMSClass("NBTTagString");
-    private static final Class NBT_LIST = Reflect.getNMSClass("NBTTagList");
+    private static final Class<?> CRAFT_ITEM_STACK_CLASS = Reflect.getOBCClass("inventory.CraftItemStack");
+    private static final Class<?> NBT_STRING = Reflect.getNMSClass("NBTTagString");
+    private static final Class<?> NBT_LIST = Reflect.getNMSClass("NBTTagList");
     private static final Map<Type, Tag> TYPES_TO_OPEN_NBT_TAGS = new HashMap<>();
     private static final List<Class> NBT_BASE_CLASSES = new ArrayList<>();
     private static final List<Field> NBT_BASE_DATA_FIELD = new ArrayList<>();
-    private static final Class NMS_ITEM_STACK_CLASS = Reflect.getNMSClass("ItemStack");
+    private static final Class<?> NMS_ITEM_STACK_CLASS = Reflect.getNMSClass("ItemStack");
     private static final Method AS_NMS_COPY = Reflect.getMethod(CRAFT_ITEM_STACK_CLASS, "asNMSCopy", ItemStack.class);
-    private static final Class NBT_TAG_COMPOUND = Reflect.getNMSClass("NBTTagCompound");
+    private static final Class<?> NBT_TAG_COMPOUND = Reflect.getNMSClass("NBTTagCompound");
     private static final Method SAVE_NMS_ITEM_STACK_METHOD = Reflect.getMethod(NMS_ITEM_STACK_CLASS, "save", NBT_TAG_COMPOUND);
     private static final Field MAP = Reflect.getField(NBT_TAG_COMPOUND, "map");
     private static final Field LIST_FIELD = Reflect.getField(NBT_LIST, "list");
@@ -41,7 +41,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
 
     private static final ConcurrentHashMap<Map.Entry<ProtocolVersion, ItemStack>, JsonObject> STACKS = new ConcurrentHashMap<>();
 
-    static{
+    static {
         NBT_BASE_CLASSES.add(Reflect.getNMSClass("NBTTagByte"));
         NBT_BASE_CLASSES.add(Reflect.getNMSClass("NBTTagByteArray"));
         NBT_BASE_CLASSES.add(Reflect.getNMSClass("NBTTagDouble"));
@@ -51,9 +51,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         NBT_BASE_CLASSES.add(Reflect.getNMSClass("NBTTagLong"));
         NBT_BASE_CLASSES.add(Reflect.getNMSClass("NBTTagShort"));
 
-        for (Class NBT_BASE_CLASS : NBT_BASE_CLASSES) {
-            NBT_BASE_DATA_FIELD.add(Reflect.getField(NBT_BASE_CLASS, "data"));
-        }
+        NBT_BASE_CLASSES.stream().map(NBT_BASE_CLASS -> Reflect.getField(NBT_BASE_CLASS, "data")).forEach(NBT_BASE_DATA_FIELD::add);
 
         TYPES_TO_OPEN_NBT_TAGS.put(Byte.class, new ByteTag(""));
         TYPES_TO_OPEN_NBT_TAGS.put(Byte[].class, new ByteArrayTag(""));
@@ -75,13 +73,12 @@ public class JSONManipulatorCurrent implements JSONManipulator{
 
     }
 
+    private final JsonParser PARSER = new JsonParser();
     private List<String> replaces;
     private String rgx;
     private ProtocolVersion protocolVersion;
     private JsonObject itemTooltip;
     private JsonArray classicTooltip;
-    private final JsonParser PARSER = new JsonParser();
-
 
     public String parse(String json, List<String> replacements, ItemStack item, String replacement, int protocol) throws InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchFieldException, NoSuchMethodException {
         JsonObject obj = PARSER.parse(json).getAsJsonObject();
@@ -123,12 +120,12 @@ public class JSONManipulatorCurrent implements JSONManipulator{
             itemTooltip = wrapper; //Save the tooltip for later use when we encounter a placeholder
             STACKS.put(p, itemTooltip); //Save it in the cache too so when parsing other packets with the same item (and client version) we no longer have to create it again
             Bukkit.getScheduler().runTaskLaterAsynchronously(ChatItem.getInstance(), () ->
-                    STACKS.remove(p)
-            , 100L); //We remove it later when no longer needed to save memory
+                            STACKS.remove(p)
+                    , 100L); //We remove it later when no longer needed to save memory
         }
 
         for (int i = 0; i < array.size(); ++i) {
-            if (array.get(i).isJsonObject()){
+            if (array.get(i).isJsonObject()) {
                 JsonObject o = array.get(i).getAsJsonObject();
                 boolean inside = false;
                 for (String replace : replacements)
@@ -143,10 +140,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                     JsonElement el = o.get("extra");
                     if (el != null) {
                         JsonArray jar = el.getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseArray(jar);
                             o.add("extra", jar);
-                        }else{
+                        } else {
                             o.remove("extra");
                         }
                     }
@@ -156,10 +153,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                         JsonElement el = o.get("extra");
                         if (el != null) {
                             JsonArray jar = el.getAsJsonArray();
-                            if(jar.size()!=0) {
+                            if (jar.size() != 0) {
                                 jar = parseArray(jar);
                                 o.add("extra", jar);
-                            }else{
+                            } else {
                                 o.remove("extra");
                             }
                         }
@@ -199,17 +196,17 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 if (!fnd) {
                     rep.add(o);
                 }
-            }else{
-                if(array.get(i).isJsonNull()){
+            } else {
+                if (array.get(i).isJsonNull()) {
                     continue;
-                }else{
-                    if(array.get(i).isJsonArray()){
+                } else {
+                    if (array.get(i).isJsonArray()) {
                         JsonArray jar = array.get(i).getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseArray(array.get(i).getAsJsonArray());
                             rep.set(i, jar);
                         }
-                    }else{
+                    } else {
 
 
                         String msg = array.get(i).getAsString();
@@ -249,7 +246,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
 
         }
         obj.add("extra", rep);
-        if(!obj.has("text")){
+        if (!obj.has("text")) {
             obj.addProperty("text", "");
         }
         return obj.toString();
@@ -283,12 +280,12 @@ public class JSONManipulatorCurrent implements JSONManipulator{
 
         StringBuilder oneLineTooltip = new StringBuilder("");
         int index = 0;
-        for(String m : tooltip){
-           oneLineTooltip.append(m.replace("{name}", sender.getName()).replace("{display-name}", sender.getDisplayName()));
-           ++index;
-           if(index!=tooltip.size()){
-               oneLineTooltip.append('\n');
-           }
+        for (String m : tooltip) {
+            oneLineTooltip.append(m.replace("{name}", sender.getName()).replace("{display-name}", sender.getDisplayName()));
+            ++index;
+            if (index != tooltip.size()) {
+                oneLineTooltip.append('\n');
+            }
         }
 
         hover.add("value", new JsonPrimitive(oneLineTooltip.toString()));
@@ -298,7 +295,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         classicTooltip = use;
 
         for (int i = 0; i < array.size(); ++i) {
-            if (array.get(i).isJsonObject()){
+            if (array.get(i).isJsonObject()) {
                 JsonObject o = array.get(i).getAsJsonObject();
                 boolean inside = false;
                 for (String replace : replacements)
@@ -313,10 +310,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                     JsonElement el = o.get("extra");
                     if (el != null) {
                         JsonArray jar = el.getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseNoItemArray(jar);
                             o.add("extra", jar);
-                        }else{
+                        } else {
                             o.remove("extra");
                         }
                     }
@@ -326,10 +323,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                         JsonElement el = o.get("extra");
                         if (el != null) {
                             JsonArray jar = el.getAsJsonArray();
-                            if(jar.size()!=0) {
+                            if (jar.size() != 0) {
                                 jar = parseNoItemArray(jar);
                                 o.add("extra", jar);
-                            }else{
+                            } else {
                                 o.remove("extra");
                             }
                         }
@@ -369,17 +366,17 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 if (!fnd) {
                     rep.add(o);
                 }
-            }else{
-                if(array.get(i).isJsonNull()){
+            } else {
+                if (array.get(i).isJsonNull()) {
                     continue;
-                }else{
-                    if(array.get(i).isJsonArray()){
+                } else {
+                    if (array.get(i).isJsonArray()) {
                         JsonArray jar = array.get(i).getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseNoItemArray(array.get(i).getAsJsonArray());
                             rep.set(i, jar);
                         }
-                    }else{
+                    } else {
 
 
                         String msg = array.get(i).getAsString();
@@ -428,8 +425,8 @@ public class JSONManipulatorCurrent implements JSONManipulator{
     private JsonArray parseNoItemArray(JsonArray arr) {
         JsonArray replacer = new JsonArray();
         for (int i = 0; i < arr.size(); ++i) {
-            if (arr.get(i).isJsonObject()){
-                    JsonObject o = arr.get(i).getAsJsonObject();
+            if (arr.get(i).isJsonObject()) {
+                JsonObject o = arr.get(i).getAsJsonObject();
                 boolean inside = false;
                 for (String replacement : replaces)
                     if (o.toString().contains(replacement)) {
@@ -452,10 +449,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                         continue;
                     }
                     JsonArray jar = el.getAsJsonArray();
-                    if(jar.size()!=0) {
+                    if (jar.size() != 0) {
                         jar = parseNoItemArray(jar);
                         o.add("extra", jar);
-                    }else{
+                    } else {
                         o.remove("extra");
                     }
                 }
@@ -493,17 +490,17 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 if (!fnd) {
                     replacer.add(o);
                 }
-            }else{
-                if(arr.get(i).isJsonNull()){
+            } else {
+                if (arr.get(i).isJsonNull()) {
                     continue;
-                }else{
-                    if(arr.get(i).isJsonArray()){
+                } else {
+                    if (arr.get(i).isJsonArray()) {
                         JsonArray jar = arr.get(i).getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseNoItemArray(arr.get(i).getAsJsonArray());
                             replacer.set(i, jar);
                         }
-                    }else{
+                    } else {
                         String msg = arr.get(i).getAsString();
                         boolean isLast = false;
                         boolean done = false;
@@ -546,7 +543,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
     private JsonArray parseArray(JsonArray arr) {
         JsonArray replacer = new JsonArray();
         for (int i = 0; i < arr.size(); ++i) {
-            if (arr.get(i).isJsonObject()){
+            if (arr.get(i).isJsonObject()) {
                 JsonObject o = arr.get(i).getAsJsonObject();
                 boolean inside = false;
                 for (String replacement : replaces)
@@ -570,10 +567,10 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                         continue;
                     }
                     JsonArray jar = el.getAsJsonArray();
-                    if(jar.size()!=0) {
+                    if (jar.size() != 0) {
                         jar = parseArray(jar);
                         o.add("extra", jar);
-                    }else{
+                    } else {
                         o.remove("extra");
                     }
                 }
@@ -611,17 +608,17 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 if (!fnd) {
                     replacer.add(o);
                 }
-            }else{
-                if(arr.get(i).isJsonNull()){
+            } else {
+                if (arr.get(i).isJsonNull()) {
                     continue;
-                }else{
-                    if(arr.get(i).isJsonArray()){
+                } else {
+                    if (arr.get(i).isJsonArray()) {
                         JsonArray jar = arr.get(i).getAsJsonArray();
-                        if(jar.size()!=0) {
+                        if (jar.size() != 0) {
                             jar = parseArray(arr.get(i).getAsJsonArray());
                             replacer.set(i, jar);
                         }
-                    }else{
+                    } else {
                         String msg = arr.get(i).getAsString();
                         boolean isLast = false;
                         boolean done = false;
@@ -662,7 +659,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
     }
 
 
-    private String escapeSpecials(String initial){
+    private String escapeSpecials(String initial) {
         return initial.replace("\"", "\\\"").replace("\\", "\\\\").replace("\b", "\\b")
                 .replace("\f", "\\f").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
     }
@@ -677,7 +674,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         Map<String, Object> nmsMap = (Map<String, Object>) MAP.get(nmsTag);
         String id = nmsMap.get("id").toString().replace("\"", "");
         Object realTag = nmsMap.get("tag");
-        if(NBT_TAG_COMPOUND.isInstance(realTag)) {  //We need to make sure this is indeed an NBTTagCompound
+        if (NBT_TAG_COMPOUND.isInstance(realTag)) {  //We need to make sure this is indeed an NBTTagCompound
             Map<String, Object> realMap = (Map<String, Object>) MAP.get(realTag);
             Set<Map.Entry<String, Object>> entrySet = realMap.entrySet();
             Map<String, Tag> map = tag.getValue();
@@ -688,7 +685,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         }
 
         Item item = new Item();
-        item.setAmount((byte)is.getAmount());
+        item.setAmount((byte) is.getAmount());
         item.setData(is.getDurability());
         item.setId(id);
         item.setTag(tag);
@@ -696,7 +693,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
     }
 
     private Tag toOpenTag(Object nmsTag, String name) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
-        if(NBT_TAG_COMPOUND.isInstance(nmsTag)) {
+        if (NBT_TAG_COMPOUND.isInstance(nmsTag)) {
             CompoundTag tag = new CompoundTag(name);
             Map<String, Tag> tagMap = tag.getValue();
 
@@ -710,7 +707,7 @@ public class JSONManipulatorCurrent implements JSONManipulator{
             return tag;
         } else {
             //Strings are a special case as they need proper escaping
-            if(NBT_STRING.isInstance(nmsTag)) {
+            if (NBT_STRING.isInstance(nmsTag)) {
                 String toString = nmsTag.toString();
                 if (toString.startsWith("\"") && toString.endsWith("\"")) {
                     toString = toString.substring(1, toString.length() - 1);
@@ -720,55 +717,55 @@ public class JSONManipulatorCurrent implements JSONManipulator{
             }
 
             //NBTTag Lists are also special, as they are a sort of compound themselves and need to be parsed recursively
-            if(NBT_LIST.isInstance(nmsTag)){
+            if (NBT_LIST.isInstance(nmsTag)) {
                 List<Object> nmsNBTBaseList = (List<Object>) LIST_FIELD.get(nmsTag);
                 List<Tag> list = new ArrayList<>();
                 int i = 0;
-                for(Object baseTag : nmsNBTBaseList){
+                for (Object baseTag : nmsNBTBaseList) {
                     list.add(toOpenTag(baseTag, String.valueOf(i)));
                     ++i;
                 }
                 return new ListTag(name, list);
             }
 
-            for(int i = 0; i < NBT_BASE_CLASSES.size(); ++i){
+            for (int i = 0; i < NBT_BASE_CLASSES.size(); ++i) {
                 Class c = NBT_BASE_CLASSES.get(i);
-                if(c.isInstance(nmsTag)){
+                if (c.isInstance(nmsTag)) {
                     Object value = NBT_BASE_DATA_FIELD.get(i).get(nmsTag);
 
                     Tag t = TYPES_TO_OPEN_NBT_TAGS.get(value.getClass()).getClass().getConstructor(String.class).newInstance(name);
 
-                    if(t instanceof ByteTag){
-                        ((ByteTag)t).setValue((byte)value);
-                        ((ByteTag)t).setValue((byte)value);
+                    if (t instanceof ByteTag) {
+                        ((ByteTag) t).setValue((byte) value);
+                        ((ByteTag) t).setValue((byte) value);
                         return t;
                     }
-                    if(t instanceof ByteArrayTag){
-                        ((ByteArrayTag)t).setValue((byte[])value);
+                    if (t instanceof ByteArrayTag) {
+                        ((ByteArrayTag) t).setValue((byte[]) value);
                         return t;
                     }
-                    if(t instanceof DoubleTag){
-                        ((DoubleTag)t).setValue((double)value);
+                    if (t instanceof DoubleTag) {
+                        ((DoubleTag) t).setValue((double) value);
                         return t;
                     }
-                    if(t instanceof FloatTag){
-                        ((FloatTag)t).setValue((float)value);
+                    if (t instanceof FloatTag) {
+                        ((FloatTag) t).setValue((float) value);
                         return t;
                     }
-                    if(t instanceof IntTag){
-                        ((IntTag)t).setValue((int)value);
+                    if (t instanceof IntTag) {
+                        ((IntTag) t).setValue((int) value);
                         return t;
                     }
-                    if(t instanceof IntArrayTag){
-                        ((IntArrayTag)t).setValue((int[])value);
+                    if (t instanceof IntArrayTag) {
+                        ((IntArrayTag) t).setValue((int[]) value);
                         return t;
                     }
-                    if(t instanceof LongTag){
-                        ((LongTag)t).setValue((long)value);
+                    if (t instanceof LongTag) {
+                        ((LongTag) t).setValue((long) value);
                         return t;
                     }
-                    if(t instanceof ShortTag){
-                        ((ShortTag)t).setValue((short)value);
+                    if (t instanceof ShortTag) {
+                        ((ShortTag) t).setValue((short) value);
                         return t;
                     }
                     return null; //Should never happen
@@ -787,25 +784,25 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         sb.append("Damage:").append(item.getData()).append("s"); //Append the durability data
 
         Map<String, Tag> tagMap = item.getTag().getValue();
-        if(tagMap.isEmpty()){
+        if (tagMap.isEmpty()) {
             sb.append("}");
             return sb.toString();
         }
         Set<Map.Entry<String, Tag>> entrySet = tagMap.entrySet();
         boolean first = true;
         sb.append(",tag:{"); //Start of the tag
-        for(Map.Entry<String, Tag> entry : entrySet){
+        for (Map.Entry<String, Tag> entry : entrySet) {
             String key = entry.getKey();
-            if(IGNORED.contains(key)){
+            if (IGNORED.contains(key)) {
                 continue;
             }
             Pattern pattern = Pattern.compile("[{}\\[\\],\":\\\\/]");
             Matcher matcher = pattern.matcher(key);
-            if(matcher.find()){
+            if (matcher.find()) {
                 continue; //Skip invalid keys, as they can cause exceptions client-side
             }
             String value = stringifyTag(entry.getValue());
-            if(!first){
+            if (!first) {
                 sb.append(",");
             }
             sb.append(key).append(":").append(value);
@@ -815,18 +812,18 @@ public class JSONManipulatorCurrent implements JSONManipulator{
         return sb.toString();
     }
 
-    private String stringifyTag(Tag normalTag){
-        if(normalTag instanceof CompoundTag) {
+    private String stringifyTag(Tag normalTag) {
+        if (normalTag instanceof CompoundTag) {
             StringBuilder sb = new StringBuilder("{");
             CompoundTag tagCompound = (CompoundTag) normalTag;
             Map<String, Tag> tagMap = tagCompound.getValue();
             Set<Map.Entry<String, Tag>> entrySet = tagMap.entrySet();
-            for(Map.Entry<String, Tag> entry : entrySet){
+            for (Map.Entry<String, Tag> entry : entrySet) {
                 String value = stringifyTag(entry.getValue());
-                if(value == null){
+                if (value == null) {
                     continue;
                 }
-                if(sb.length()>1){
+                if (sb.length() > 1) {
                     sb.append(",");
                 }
                 sb.append(entry.getKey()).append(":").append(value);
@@ -835,26 +832,26 @@ public class JSONManipulatorCurrent implements JSONManipulator{
             sb.append("}");
             return sb.toString();
         } else {
-            if(normalTag instanceof StringTag) {
-                return "\""+((StringTag)normalTag).getValue()+"\""; //Should be already escaped
+            if (normalTag instanceof StringTag) {
+                return "\"" + ((StringTag) normalTag).getValue() + "\""; //Should be already escaped
             }
 
-            if(normalTag instanceof ListTag){
-                List<Tag> list = ((ListTag)normalTag).getValue();
+            if (normalTag instanceof ListTag) {
+                List<Tag> list = ((ListTag) normalTag).getValue();
                 StringBuilder sb = new StringBuilder("[");
                 boolean first = true;
-                for(Tag tag : list){
+                for (Tag tag : list) {
                     String index = tag.getName();
                     String value = stringifyTag(tag);
-                    if(value == null){
+                    if (value == null) {
                         continue;
                     }
-                    if(!first){
+                    if (!first) {
                         sb.append(",");
                     }
-                    if(protocolVersion.MAX_VER <= ProtocolVersion.V1_11_X.MAX_VER){ //it's before 1.12
+                    if (protocolVersion.MAX_VER <= ProtocolVersion.V1_11_X.MAX_VER) { //it's before 1.12
                         sb.append(index).append(":").append(value);
-                    }else{
+                    } else {
                         sb.append(value);
                     }
 
@@ -864,30 +861,30 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 return sb.toString();
             }
 
-            if(normalTag instanceof ByteTag){
-                return normalTag.getValue()+"b";
+            if (normalTag instanceof ByteTag) {
+                return normalTag.getValue() + "b";
             }
-            if(normalTag instanceof ByteArrayTag){
-                return "["+((byte[])normalTag.getValue()).length+" bytes]";
+            if (normalTag instanceof ByteArrayTag) {
+                return "[" + ((byte[]) normalTag.getValue()).length + " bytes]";
             }
-            if(normalTag instanceof DoubleTag){
-                return (double)normalTag.getValue()+"d";
+            if (normalTag instanceof DoubleTag) {
+                return (double) normalTag.getValue() + "d";
             }
-            if(normalTag instanceof FloatTag){
-                return (float)normalTag.getValue()+"f";
+            if (normalTag instanceof FloatTag) {
+                return (float) normalTag.getValue() + "f";
             }
-            if(normalTag instanceof IntTag){
-                return String.valueOf((int)normalTag.getValue());
+            if (normalTag instanceof IntTag) {
+                return String.valueOf((int) normalTag.getValue());
             }
-            if(normalTag instanceof IntArrayTag){
-                int[] array = (int[])normalTag.getValue();
-                if(array.length == 0){
+            if (normalTag instanceof IntArrayTag) {
+                int[] array = (int[]) normalTag.getValue();
+                if (array.length == 0) {
                     return null;
                 }
                 StringBuilder sb = new StringBuilder("[");
                 boolean first = true;
-                for(int i : array){
-                    if(!first){
+                for (int i : array) {
+                    if (!first) {
                         sb.append(",");
                     }
                     sb.append(i);
@@ -896,11 +893,11 @@ public class JSONManipulatorCurrent implements JSONManipulator{
                 sb.append("]");
                 return sb.toString();
             }
-            if(normalTag instanceof LongTag){
-                return (long)normalTag.getValue()+"L";
+            if (normalTag instanceof LongTag) {
+                return (long) normalTag.getValue() + "L";
             }
-            if(normalTag instanceof ShortTag){
-                return (short)normalTag.getValue()+"s";
+            if (normalTag instanceof ShortTag) {
+                return (short) normalTag.getValue() + "s";
             }
             return null; //Should never happen
         }

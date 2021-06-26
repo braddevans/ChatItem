@@ -16,25 +16,25 @@ import java.util.HashMap;
 
 public class ChatEventListener implements Listener {
 
-    private Storage c;
-    public final static char SEPARATOR = ((char)0x0007);
+    public final static char SEPARATOR = ((char) 0x0007);
     private final static String LEFT = "{remaining}";
     private final HashMap<String, Long> COOLDOWNS = new HashMap<>();
+    private Storage c;
 
     public ChatEventListener(Storage storage) {
         c = storage;
     }
 
-    private String calculateTime(long seconds){
-        if(seconds < 60){
-            return seconds+c.SECONDS;
+    private String calculateTime(long seconds) {
+        if (seconds < 60) {
+            return seconds + c.SECONDS;
         }
-        if(seconds < 3600){
+        if (seconds < 3600) {
             StringBuilder builder = new StringBuilder();
             int minutes = (int) seconds / 60;
             builder.append(minutes).append(c.MINUTES);
-            int secs = (int) seconds - minutes*60;
-            if(secs != 0){
+            int secs = (int) seconds - minutes * 60;
+            if (secs != 0) {
                 builder.append(" ").append(secs).append(c.SECONDS);
             }
             return builder.toString();
@@ -42,25 +42,25 @@ public class ChatEventListener implements Listener {
         StringBuilder builder = new StringBuilder();
         int hours = (int) seconds / 3600;
         builder.append(hours).append(c.HOURS);
-        int minutes = (int) (seconds/60) - (hours*60);
-        if(minutes != 0){
+        int minutes = (int) (seconds / 60) - (hours * 60);
+        if (minutes != 0) {
             builder.append(" ").append(minutes).append(c.MINUTES);
         }
-        int secs = (int) (seconds - ((seconds/60)*60));
-        if(secs != 0){
+        int secs = (int) (seconds - ((seconds / 60) * 60));
+        if (secs != 0) {
             builder.append(" ").append(secs).append(c.SECONDS);
         }
         return builder.toString();
     }
 
-    private int countOccurrences(String findStr, String str){
+    private int countOccurrences(String findStr, String str) {
         int lastIndex = 0;
         int count = 0;
-        while(lastIndex != -1){
+        while (lastIndex != -1) {
 
-            lastIndex = str.indexOf(findStr,lastIndex);
+            lastIndex = str.indexOf(findStr, lastIndex);
 
-            if(lastIndex != -1){
+            if (lastIndex != -1) {
                 count++;
                 lastIndex += findStr.length();
             }
@@ -69,9 +69,10 @@ public class ChatEventListener implements Listener {
     }
 
     @SuppressWarnings("deprecation")
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)  //We need to have lowest priority in order to get to the event before DeluxeChat or other plugins do
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    //We need to have lowest priority in order to get to the event before DeluxeChat or other plugins do
     public void onChat(final AsyncPlayerChatEvent e) {
-        if(e.getMessage().indexOf(SEPARATOR)!=-1){  //If the BELL character is found, we have to remove it
+        if (e.getMessage().indexOf(SEPARATOR) != -1) {  //If the BELL character is found, we have to remove it
             String msg = e.getMessage().replace(Character.toString(SEPARATOR), "");
             e.setMessage(msg);
         }
@@ -90,10 +91,10 @@ public class ChatEventListener implements Listener {
         Player p = e.getPlayer();
 
         if (!p.hasPermission("chatitem.use")) {
-            if(!c.LET_MESSAGE_THROUGH) {
+            if (!c.LET_MESSAGE_THROUGH) {
                 e.setCancelled(true);
             }
-            if(!c.NO_PERMISSION_MESSAGE.isEmpty() && c.SHOW_NO_PERM_NORMAL){
+            if (!c.NO_PERMISSION_MESSAGE.isEmpty() && c.SHOW_NO_PERM_NORMAL) {
                 p.sendMessage(c.NO_PERMISSION_MESSAGE);
             }
             return;
@@ -105,22 +106,22 @@ public class ChatEventListener implements Listener {
                     e.getPlayer().sendMessage(c.DENY_MESSAGE);
                 return;
             }
-            if(c.HAND_DISABLED) {
+            if (c.HAND_DISABLED) {
                 return;
             }
         }
-        if(c.COOLDOWN > 0 && !p.hasPermission("chatitem.ignore-cooldown")){
-            if(COOLDOWNS.containsKey(p.getName())){
+        if (c.COOLDOWN > 0 && !p.hasPermission("chatitem.ignore-cooldown")) {
+            if (COOLDOWNS.containsKey(p.getName())) {
                 long start = COOLDOWNS.get(p.getName());
-                long current = System.currentTimeMillis()/1000;
+                long current = System.currentTimeMillis() / 1000;
                 long elapsed = current - start;
-                if(elapsed >= c.COOLDOWN){
+                if (elapsed >= c.COOLDOWN) {
                     COOLDOWNS.remove(p.getName());
-                }else{
-                    if(!c.LET_MESSAGE_THROUGH) {
+                } else {
+                    if (!c.LET_MESSAGE_THROUGH) {
                         e.setCancelled(true);
                     }
-                    if(!c.COOLDOWN_MESSAGE.isEmpty()){
+                    if (!c.COOLDOWN_MESSAGE.isEmpty()) {
                         long left = (start + c.COOLDOWN) - current;
                         p.sendMessage(c.COOLDOWN_MESSAGE.replace(LEFT, calculateTime(left)));
                     }
@@ -129,14 +130,14 @@ public class ChatEventListener implements Listener {
             }
         }
         String s = e.getMessage();
-        for(String placeholder : c.PLACEHOLDERS){
+        for (String placeholder : c.PLACEHOLDERS) {
             s = s.replace(placeholder, c.PLACEHOLDERS.get(0));
         }
         int occurrences = countOccurrences(c.PLACEHOLDERS.get(0), s);
 
-        if(occurrences>c.LIMIT){
+        if (occurrences > c.LIMIT) {
             e.setCancelled(true);
-            if(c.LIMIT_MESSAGE.isEmpty()){
+            if (c.LIMIT_MESSAGE.isEmpty()) {
                 return;
             }
             e.getPlayer().sendMessage(c.LIMIT_MESSAGE);
@@ -144,11 +145,9 @@ public class ChatEventListener implements Listener {
         }
 
         String oldmsg = e.getMessage();
-        StringBuilder sb = new StringBuilder(oldmsg);
-        sb.append(SEPARATOR).append(e.getPlayer().getName());
-        e.setMessage(sb.toString());
+        e.setMessage(oldmsg + SEPARATOR + e.getPlayer().getName());
         Bukkit.getConsoleSender().sendMessage(String.format(e.getFormat(), e.getPlayer().getDisplayName(), oldmsg));
-        if(!p.hasPermission("chatitem.ignore-cooldown")) {
+        if (!p.hasPermission("chatitem.ignore-cooldown")) {
             COOLDOWNS.put(p.getName(), System.currentTimeMillis() / 1000);
         }
     }
@@ -156,19 +155,19 @@ public class ChatEventListener implements Listener {
 
     @SuppressWarnings("deprecation")
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onCommand(final PlayerCommandPreprocessEvent e){
-        if(e.getMessage().indexOf(SEPARATOR)!=-1){  //If the BELL character is found, we have to remove it
+    public void onCommand(final PlayerCommandPreprocessEvent e) {
+        if (e.getMessage().indexOf(SEPARATOR) != -1) {  //If the BELL character is found, we have to remove it
             String msg = e.getMessage().replace(Character.toString(SEPARATOR), "");
             e.setMessage(msg);
         }
         String commandString = e.getMessage().split(" ")[0].replaceAll("^/+", ""); //First part of the command, without leading slashes and without arguments
         Command cmd = Bukkit.getPluginCommand(commandString);
-        if(cmd==null){ //not a plugin command
-            if(!c.ALLOWED_DEFAULT_COMMANDS.contains(commandString)){
+        if (cmd == null) { //not a plugin command
+            if (!c.ALLOWED_DEFAULT_COMMANDS.contains(commandString)) {
                 return;
             }
-        }else{
-            if(!c.ALLOWED_PLUGIN_COMMANDS.contains(cmd)){
+        } else {
+            if (!c.ALLOWED_PLUGIN_COMMANDS.contains(cmd)) {
                 return;
             }
         }
@@ -188,7 +187,7 @@ public class ChatEventListener implements Listener {
         }
 
         if (!p.hasPermission("chatitem.use")) {
-            if(!c.NO_PERMISSION_MESSAGE.isEmpty() && c.SHOW_NO_PERM_COMMAND){
+            if (!c.NO_PERMISSION_MESSAGE.isEmpty() && c.SHOW_NO_PERM_COMMAND) {
                 p.sendMessage(c.NO_PERMISSION_MESSAGE);
             }
             e.setCancelled(true);
@@ -202,23 +201,23 @@ public class ChatEventListener implements Listener {
                     e.getPlayer().sendMessage(c.DENY_MESSAGE);
                 }
             }
-            if(c.HAND_DISABLED) {
+            if (c.HAND_DISABLED) {
                 return;
             }
         }
 
-        if(c.COOLDOWN > 0 && !p.hasPermission("chatitem.ignore-cooldown")){
-            if(COOLDOWNS.containsKey(p.getName())){
+        if (c.COOLDOWN > 0 && !p.hasPermission("chatitem.ignore-cooldown")) {
+            if (COOLDOWNS.containsKey(p.getName())) {
                 long start = COOLDOWNS.get(p.getName());
-                long current = System.currentTimeMillis()/1000;
+                long current = System.currentTimeMillis() / 1000;
                 long elapsed = current - start;
-                if(elapsed >= c.COOLDOWN){
+                if (elapsed >= c.COOLDOWN) {
                     COOLDOWNS.remove(p.getName());
-                }else{
-                    if(!c.LET_MESSAGE_THROUGH) {
+                } else {
+                    if (!c.LET_MESSAGE_THROUGH) {
                         e.setCancelled(true);
                     }
-                    if(!c.COOLDOWN_MESSAGE.isEmpty()){
+                    if (!c.COOLDOWN_MESSAGE.isEmpty()) {
                         long left = (start + c.COOLDOWN) - current;
                         p.sendMessage(c.COOLDOWN_MESSAGE.replace(LEFT, calculateTime(left)));
                     }
@@ -228,24 +227,22 @@ public class ChatEventListener implements Listener {
         }
 
         String s = e.getMessage();
-        for(String placeholder : c.PLACEHOLDERS){
+        for (String placeholder : c.PLACEHOLDERS) {
             s = s.replace(placeholder, c.PLACEHOLDERS.get(0));
         }
         int occurrences = countOccurrences(c.PLACEHOLDERS.get(0), s);
 
-        if(occurrences>c.LIMIT){
+        if (occurrences > c.LIMIT) {
             e.setCancelled(true);
-            if(c.LIMIT_MESSAGE.isEmpty()){
-               return;
+            if (c.LIMIT_MESSAGE.isEmpty()) {
+                return;
             }
             e.getPlayer().sendMessage(c.LIMIT_MESSAGE);
             return;
         }
 
-        StringBuilder sb = new StringBuilder(e.getMessage());
-        sb.append(SEPARATOR).append(e.getPlayer().getName());
-        e.setMessage(sb.toString());
-        if(!p.hasPermission("chatitem.ignore-cooldown")) {
+        e.setMessage(e.getMessage() + SEPARATOR + e.getPlayer().getName());
+        if (!p.hasPermission("chatitem.ignore-cooldown")) {
             COOLDOWNS.put(p.getName(), System.currentTimeMillis() / 1000);
         }
     }

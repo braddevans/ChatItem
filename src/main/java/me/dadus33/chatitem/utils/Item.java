@@ -9,35 +9,35 @@ public class Item {
     private short data;
     private CompoundTag tag;
 
-    public CompoundTag getTag(){
+    public CompoundTag getTag() {
         return tag;
     }
 
-    public void setTag(CompoundTag newTag){
+    public void setTag(CompoundTag newTag) {
         this.tag = newTag;
     }
 
-    public void setId(String newId){
-        this.id = newId;
-    }
-
-    public void setData(short newData){
-        data = newData;
-    }
-
-    public String getId(){
+    public String getId() {
         return id;
     }
 
-    public short getData(){
+    public void setId(String newId) {
+        this.id = newId;
+    }
+
+    public short getData() {
         return data;
     }
 
-    public void setAmount(byte newAmount){
-        this.amount = newAmount;
+    public void setData(short newData) {
+        data = newData;
     }
 
-    public byte getAmount(){
+    public byte getAmount() {
         return amount;
+    }
+
+    public void setAmount(byte newAmount) {
+        this.amount = newAmount;
     }
 }

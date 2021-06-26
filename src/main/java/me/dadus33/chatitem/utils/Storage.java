@@ -16,7 +16,6 @@ import java.util.logging.Level;
 
 public class Storage {
 
-    private FileConfiguration conf;
     public final HashMap<String, HashMap<Short, String>> TRANSLATIONS = new HashMap<>();
     public final Boolean COLOR_IF_ALREADY_COLORED;
     public final Boolean FORCE_ADD_AMOUNT;
@@ -36,13 +35,14 @@ public class Storage {
     public final String SECONDS;
     public final String MINUTES;
     public final String HOURS;
-    private final Integer CONFIG_VERSION;
     public final Long COOLDOWN;
     public final Integer LIMIT;
     public final List<Command> ALLOWED_PLUGIN_COMMANDS = new ArrayList<>();
     public final List<String> ALLOWED_DEFAULT_COMMANDS = new ArrayList<>();
     public final List<String> PLACEHOLDERS;
     public final List<String> HAND_TOOLTIP;
+    private final Integer CONFIG_VERSION;
+    private FileConfiguration conf;
 
     public Storage(FileConfiguration cnf) {
         this.conf = cnf;
@@ -85,12 +85,11 @@ public class Storage {
         colorStringList(HAND_TOOLTIP);
         final List<String> cmds = conf.getStringList("General.commands");
         Bukkit.getScheduler().runTaskLaterAsynchronously(ChatItem.getInstance(), () -> {
-            for(String s : cmds){
+            for (String s : cmds) {
                 Command c = Bukkit.getPluginCommand(s);
-                if(c!=null) {
+                if (c != null) {
                     ALLOWED_PLUGIN_COMMANDS.add(c);
-                }
-                else {
+                } else {
                     ALLOWED_DEFAULT_COMMANDS.add(s);
                 }
             }
@@ -100,6 +99,12 @@ public class Storage {
 
     private static String color(String s) {
         return ChatColor.translateAlternateColorCodes('&', s);
+    }
+
+    private static void colorStringList(List<String> input) {
+        for (int i = 0; i < input.size(); ++i) {
+            input.set(i, color(input.get(i)));
+        }
     }
 
     private void checkConfigVersion() {
@@ -112,15 +117,8 @@ public class Storage {
         }
     }
 
-
     private void performOverwrite() {
         ChatItem.getInstance().saveResource("config.yml", true);
-    }
-
-    private static void colorStringList(List<String> input){
-        for(int i=0; i<input.size(); ++i){
-            input.set(i, color(input.get(i)));
-        }
     }
 
 }

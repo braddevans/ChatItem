@@ -27,16 +27,16 @@ public class APIImplementation implements ChatItemAPI {
 
     private Logger logger;
 
-    public APIImplementation(Storage st){
+    public APIImplementation(Storage st) {
         this.c = st;
         this.logger = ChatItem.getInstance().getLogger();
     }
 
-    public void updateLogger(){
+    public void updateLogger() {
         this.logger = ChatItem.getInstance().getLogger();
     }
 
-    public void setStorage(Storage newStorage){
+    public void setStorage(Storage newStorage) {
         this.c = newStorage;
     }
 
@@ -46,7 +46,7 @@ public class APIImplementation implements ChatItemAPI {
         JSONManipulator manipulator = ChatItem.getManipulator();
         try {
             return manipulator.parse(DEFAULT_JSON, DEFAULT_REPLACEMENT, item, ChatPacketListener.styleItem(item, c), ProtocolVersion.getServerVersion().MAX_VER);
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
             e.printStackTrace();
             return null;
@@ -58,7 +58,7 @@ public class APIImplementation implements ChatItemAPI {
         JSONManipulator manipulator = ChatItem.getManipulator();
         try {
             return manipulator.parse(DEFAULT_JSON, DEFAULT_REPLACEMENT, item, customReplacement, ProtocolVersion.getServerVersion().MAX_VER);
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
             e.printStackTrace();
             return null;
@@ -70,7 +70,7 @@ public class APIImplementation implements ChatItemAPI {
         JSONManipulator manipulator = ChatItem.getManipulator();
         try {
             return manipulator.parse(DEFAULT_JSON, DEFAULT_REPLACEMENT, item, ChatPacketListener.styleItem(item, c), ProtocolVersion.getClientVersion(client));
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
             e.printStackTrace();
             return null;
@@ -82,7 +82,7 @@ public class APIImplementation implements ChatItemAPI {
         JSONManipulator manipulator = ChatItem.getManipulator();
         try {
             return manipulator.parse(DEFAULT_JSON, DEFAULT_REPLACEMENT, item, customReplacement, ProtocolVersion.getClientVersion(client));
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
             e.printStackTrace();
             return null;
@@ -96,20 +96,7 @@ public class APIImplementation implements ChatItemAPI {
         obj.add("extra", Translator.toJson(text));
         String main = obj.toString();
         int version = ProtocolVersion.getServerVersion().MAX_VER;
-        for(int i = 0; i < items.length; ++i){
-            JSONManipulator manipulator = ChatItem.getManipulator();
-            ItemStack item = items[i];
-            String style = ChatPacketListener.styleItem(item, c);
-            List<String> replacements = Collections.singletonList("%_"+i);
-            try {
-                main = manipulator.parse(main, replacements, item, style, version);
-            } catch (Exception e){
-                logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
-                e.printStackTrace();
-                return null;
-            }
-        }
-        return main;
+        return itemJsonManipulationLoop(main, version, items);
     }
 
     @Override
@@ -118,20 +105,7 @@ public class APIImplementation implements ChatItemAPI {
         wrapper.add("extra", Translator.toJson(text));
         String main = wrapper.toString();
         int version = ProtocolVersion.getServerVersion().MAX_VER;
-        for(int i = 0; i < items.length; ++i){
-            JSONManipulator manipulator = ChatItem.getManipulator();
-            ItemStack item = items[i];
-            String style = Translator.toJson(customReplacements[i]).toString();
-            List<String> replacements = Collections.singletonList("%_"+i);
-            try {
-                main = manipulator.parse(main, replacements, item, style, version);
-            } catch (Exception e){
-                logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
-                e.printStackTrace();
-                return null;
-            }
-        }
-        return main;
+        return itemJsonManipulationLoop(main, version, items);
     }
 
     @Override
@@ -141,14 +115,18 @@ public class APIImplementation implements ChatItemAPI {
         obj.add("extra", Translator.toJson(text));
         String main = obj.toString();
         int version = ProtocolVersion.getClientVersion(client);
-        for(int i = 0; i < items.length; ++i){
+        return itemJsonManipulationLoop(main, version, items);
+    }
+
+    private String itemJsonManipulationLoop(String main, int version, ItemStack[] items) {
+        for (int i = 0; i < items.length; ++i) {
             JSONManipulator manipulator = ChatItem.getManipulator();
             ItemStack item = items[i];
             String style = ChatPacketListener.styleItem(item, c);
-            List<String> replacements = Collections.singletonList("%_"+i);
+            List<String> replacements = Collections.singletonList("%_" + i);
             try {
                 main = manipulator.parse(main, replacements, item, style, version);
-            } catch (Exception e){
+            } catch (Exception e) {
                 logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
                 e.printStackTrace();
                 return null;
@@ -164,19 +142,6 @@ public class APIImplementation implements ChatItemAPI {
         obj.add("extra", Translator.toJson(text));
         String main = obj.toString();
         int version = ProtocolVersion.getClientVersion(client);
-        for(int i = 0; i < items.length; ++i){
-            JSONManipulator manipulator = ChatItem.getManipulator();
-            ItemStack item = items[i];
-            String style = Translator.toJson(customReplacements[i]).toString();
-            List<String> replacements = Collections.singletonList("%_"+i);
-            try {
-                main = manipulator.parse(main, replacements, item, style, version);
-            } catch (Exception e){
-                logger.log(Level.SEVERE, "An unexpected exception was caught while running an API method from ChatItem. Please contact the developer immediately, providing him with the following stack-trace:");
-                e.printStackTrace();
-                return null;
-            }
-        }
-        return main;
+        return itemJsonManipulationLoop(main, version, items);
     }
 }

@@ -6,6 +6,7 @@ import com.github.steveice10.opennbt.tag.builtin.StringTag;
 
 import java.util.HashMap;
 import java.util.Map;
+
 /**
  * Thanks to the developers of ViaVersion for this!
  */
@@ -172,13 +173,12 @@ public class ItemRewriter_1_9_TO_1_8 {
     }
 
 
-
     static void reversedToClient(Item item) {
         if (item != null) {
             if (item.getId().equals("minecraft:spawn_egg") && item.getData() == 0) { // Monster Egg
                 CompoundTag tag = item.getTag();
                 int data = 0;
-                if(tag != null) {
+                if (tag != null) {
                     if (tag.get("EntityTag") instanceof CompoundTag) {
                         CompoundTag entityTag = tag.get("EntityTag");
                         if (entityTag.get("id") instanceof StringTag) {
@@ -195,7 +195,7 @@ public class ItemRewriter_1_9_TO_1_8 {
             if (item.getId().equals("minecraft:potion")) { // Potion
                 CompoundTag tag = item.getTag();
                 int data = 0;
-                if(tag != null) {
+                if (tag != null) {
                     if (tag.get("Potion") instanceof StringTag) {
                         StringTag potion = tag.get("Potion");
                         String potionName = potion.getValue().replace("minecraft:", "");
@@ -213,7 +213,7 @@ public class ItemRewriter_1_9_TO_1_8 {
                 CompoundTag tag = item.getTag();
                 int data = 0;
                 item.setId("minecraft:potion"); // Potion
-                if(tag != null) {
+                if (tag != null) {
                     if (tag.get("Potion") instanceof StringTag) {
                         StringTag potion = tag.get("Potion");
                         String potionName = potion.getValue().replace("minecraft:", "");
